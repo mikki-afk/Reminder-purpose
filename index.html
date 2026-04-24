@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Language Timer" />
+  <title>Language Reminder</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      transition: background 0.8s ease, color 0.8s ease;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      overflow: hidden;
+    }
+
+    /* English mode — warm amber/gold */
+    body.english {
+      background: linear-gradient(145deg, #1a1200 0%, #3d2b00 40%, #6b4800 100%);
+      color: #ffe9a0;
+    }
+
+    /* Chinese mode — deep indigo/rose */
+    body.chinese {
+      background: linear-gradient(145deg, #0d0018 0%, #2a0038 40%, #4a0060 100%);
+      color: #f9c8f0;
+    }
+
+    .card {
+      text-align: center;
+      padding: 2.5rem 2rem;
+      max-width: 360px;
+      width: 90%;
+    }
+
+    .mode-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0.35rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 2rem;
+      opacity: 0.7;
+    }
+
+    body.english .mode-badge { background: rgba(255,220,100,0.15); color: #ffd966; }
+    body.chinese .mode-badge { background: rgba(255,150,230,0.15); color: #ff9ee8; }
+
+    .emoji {
+      font-size: 5.5rem;
+      line-height: 1;
+      margin-bottom: 1.2rem;
+      filter: drop-shadow(0 0 24px currentColor);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    .main-label {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+    }
+
+    .sub-label {
+      font-size: 0.95rem;
+      opacity: 0.55;
+      margin-bottom: 2.5rem;
+    }
+
+    .divider {
+      width: 40px;
+      height: 2px;
+      border-radius: 2px;
+      margin: 0 auto 2.5rem;
+      opacity: 0.3;
+    }
+
+    body.english .divider { background: #ffd966; }
+    body.chinese .divider { background: #ff9ee8; }
+
+    .countdown-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.45;
+      margin-bottom: 0.6rem;
+    }
+
+    .countdown {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .switch-time {
+      font-size: 0.82rem;
+      opacity: 0.45;
+    }
+
+    .clock {
+      margin-top: 2.8rem;
+      font-size: 0.78rem;
+      opacity: 0.35;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      width: 100%;
+      height: 3px;
+      border-radius: 99px;
+      margin-top: 2.5rem;
+      overflow: hidden;
+      opacity: 0.3;
+    }
+
+    body.english .progress-wrap { background: rgba(255,220,100,0.2); }
+    body.chinese .progress-wrap { background: rgba(255,150,230,0.2); }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 1s linear;
+    }
+
+    body.english .progress-bar { background: #ffd966; }
+    body.chinese .progress-bar { background: #ff9ee8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="mode-badge" id="badge">—</div>
+    <div class="emoji" id="emoji">⏳</div>
+    <div class="main-label" id="main-label">Loading…</div>
+    <div class="sub-label" id="sub-label"></div>
+    <div class="divider"></div>
+    <div class="countdown-label">Next switch in</div>
+    <div class="countdown" id="countdown">--:--:--</div>
+    <div class="switch-time" id="switch-time"></div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+    <div class="clock" id="clock"></div>
+  </div>
+
+  <script>
+    const ENGLISH_START = 10; // 10:00
+    const ENGLISH_END   = 22; // 22:00
+
+    function isEnglishTime(h, m, s) {
+      const totalSec = h * 3600 + m * 60 + s;
+      const start    = ENGLISH_START * 3600;
+      const end      = ENGLISH_END   * 3600;
+      return totalSec >= start && totalSec < end;
+    }
+
+    function secsUntilSwitch(h, m, s) {
+      const totalSec = h * 3600 + m * 60 + s;
+      const start    = ENGLISH_START * 3600;
+      const end      = ENGLISH_END   * 3600;
+      const dayEnd   = 24 * 3600;
+
+      if (isEnglishTime(h, m, s)) {
+        return end - totalSec;           // seconds until 22:00
+      } else if (totalSec < start) {
+        return start - totalSec;         // seconds until 10:00 (same day)
+      } else {
+        return dayEnd - totalSec + start; // seconds until 10:00 (next day)
+      }
+    }
+
+    function fmt2(n) { return String(n).padStart(2, '0'); }
+
+    function fmtCountdown(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return `${fmt2(h)}:${fmt2(m)}:${fmt2(s)}`;
+    }
+
+    function fmtSwitchTime(english) {
+      if (english) return 'switches to 中文时间 at 10:00 PM';
+      const now = new Date();
+      const h   = now.getHours();
+      const day = h < ENGLISH_START ? 'today' : 'tomorrow';
+      return `switches to English time at 10:00 AM ${day}`;
+    }
+
+    function sessionProgress(h, m, s) {
+      const totalSec  = h * 3600 + m * 60 + s;
+      const start     = ENGLISH_START * 3600;
+      const end       = ENGLISH_END   * 3600;
+      const dayEnd    = 24 * 3600;
+
+      if (isEnglishTime(h, m, s)) {
+        const elapsed  = totalSec - start;
+        const duration = end - start;
+        return elapsed / duration;
+      } else {
+        // Chinese session: 22:00 → 10:00 (12 hours)
+        const duration = 12 * 3600;
+        let elapsed;
+        if (totalSec >= end) {
+          elapsed = totalSec - end;
+        } else {
+          elapsed = dayEnd - end + totalSec;
+        }
+        return elapsed / duration;
+      }
+    }
+
+    function tick() {
+      const now = new Date();
+      const h   = now.getHours();
+      const m   = now.getMinutes();
+      const s   = now.getSeconds();
+      const eng = isEnglishTime(h, m, s);
+
+      // Theme
+      document.body.className = eng ? 'english' : 'chinese';
+
+      // Content
+      document.getElementById('badge').textContent      = eng ? 'English Mode' : '中文模式';
+      document.getElementById('emoji').textContent      = eng ? '📝' : '💕';
+      document.getElementById('main-label').textContent = eng ? 'English time!' : '中文时间!';
+      document.getElementById('sub-label').textContent  = eng
+        ? 'Chat with Claude in English'
+        : '用中文和 Claude 聊天';
+
+      // Countdown
+      const remaining = secsUntilSwitch(h, m, s);
+      document.getElementById('countdown').textContent   = fmtCountdown(remaining);
+      document.getElementById('switch-time').textContent = fmtSwitchTime(eng);
+
+      // Progress bar (how far through current session)
+      const pct = sessionProgress(h, m, s) * 100;
+      document.getElementById('progress-bar').style.width = pct.toFixed(2) + '%';
+
+      // Live clock
+      document.getElementById('clock').textContent =
+        `${fmt2(h)}:${fmt2(m)}:${fmt2(s)}`;
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>
