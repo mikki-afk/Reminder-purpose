@@ -437,6 +437,12 @@
   </div>
 
   <script>
+    // ── CONFIG ────────────────────────────────────────────────
+    // After deploying the Cloudflare Worker, paste its URL here:
+    const WORKER_URL = '';
+    // e.g. 'https://language-reminder.YOUR_NAME.workers.dev'
+    // ─────────────────────────────────────────────────────────
+
     const ENGLISH_START = 10;
     const ENGLISH_END   = 22;
 
@@ -505,22 +511,34 @@
 
     // ── Notifications ─────────────────────────────────────────
 
-    function notifSupported() { return 'Notification' in window; }
+    // ── Notifications (Web Push via Cloudflare Worker) ───────
 
-    function updateNotifyBtn() {
+    function pushSupported() {
+      return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+    }
+
+    async function getSubscription() {
+      if (!pushSupported()) return null;
+      const reg = await navigator.serviceWorker.ready;
+      return reg.pushManager.getSubscription();
+    }
+
+    async function updateNotifyBtn() {
       const btn = document.getElementById('notify-btn');
-      if (!notifSupported()) {
-        btn.textContent = '🔕 不支持通知';
+      if (!pushSupported()) {
+        btn.textContent = '🔕 此设备不支持通知';
         btn.classList.add('denied');
         return;
       }
-      const p = Notification.permission;
-      if (p === 'granted') {
+      if (Notification.permission === 'denied') {
+        btn.textContent = '✗ 通知已拒绝（请到系统设置里开启）';
+        btn.classList.add('denied');
+        return;
+      }
+      const sub = await getSubscription();
+      if (sub) {
         btn.textContent = '✓ 提醒已开启';
         btn.classList.add('granted');
-      } else if (p === 'denied') {
-        btn.textContent = '✗ 通知已拒绝（请在设置里开启）';
-        btn.classList.add('denied');
       } else {
         btn.textContent = '🔔 开启提醒';
         btn.classList.remove('granted', 'denied');
@@ -528,18 +546,60 @@
     }
 
     async function handleNotifyClick() {
-      if (!notifSupported() || Notification.permission !== 'default') return;
-      await Notification.requestPermission();
-      updateNotifyBtn();
+      if (!pushSupported()) return;
+      const existing = await getSubscription();
+      if (existing) return; // already subscribed
+
+      // 1. Request permission
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { updateNotifyBtn(); return; }
+
+      // 2. Get VAPID public key from Worker
+      if (!WORKER_URL) {
+        // Fallback: in-app notification only (no server push)
+        updateNotifyBtn();
+        alert('WORKER_URL 未设置，只能在网页开启时收到提醒。\n请先部署 Cloudflare Worker 并填写 WORKER_URL。');
+        return;
+      }
+
+      try {
+        const res    = await fetch(`${WORKER_URL}/vapid-public-key`);
+        const pubKey = await res.text();
+
+        // 3. Subscribe to push
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly:      true,
+          applicationServerKey: urlB64ToUint8(pubKey),
+        });
+
+        // 4. Send subscription to Worker
+        await fetch(`${WORKER_URL}/subscribe`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(sub),
+        });
+
+        updateNotifyBtn();
+      } catch (e) {
+        console.error('Subscribe error:', e);
+        updateNotifyBtn();
+      }
     }
 
-    function fireNotification(eng) {
-      if (!notifSupported() || Notification.permission !== 'granted') return;
+    function urlB64ToUint8(b64) {
+      const base64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+      const raw    = atob(base64 + '='.repeat((4 - base64.length % 4) % 4));
+      return Uint8Array.from(raw, c => c.charCodeAt(0));
+    }
+
+    function fireLocalNotification(eng) {
+      // In-app fallback when page is open (no server needed)
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
       new Notification(eng ? 'English time! 📝' : '中文时间! 💕', {
         body: eng
           ? '10 AM–10 PM  •  Chat with Claude in English'
           : '晚上10点–早上10点  •  用中文和 Claude 聊天',
-        silent: false,
       });
     }
 
@@ -578,7 +638,7 @@
       // Detect switch
       if (prevIsEnglish !== null && prevIsEnglish !== eng) {
         showFlash(eng);
-        fireNotification(eng);
+        fireLocalNotification(eng); // fires when page is open
       }
       prevIsEnglish = eng;
     }
@@ -591,7 +651,7 @@
 
     // ── Init ──────────────────────────────────────────────────
 
-    updateNotifyBtn();
+    updateNotifyBtn(); // async, updates button after checking subscription
     tick();
     setInterval(tick, 1000);
   </script>

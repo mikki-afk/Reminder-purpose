@@ -1,0 +1,14 @@
+name = "language-reminder"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Cron triggers — times are UTC; UTC+8 users: 02:00 = 10 AM, 14:00 = 10 PM
+[triggers]
+crons = ["0 2 * * *", "0 14 * * *"]
+
+# Create this KV namespace first:
+#   wrangler kv:namespace create SUBSCRIPTIONS
+# then replace the id below.
+[[kv_namespaces]]
+binding = "SUBSCRIPTIONS"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
