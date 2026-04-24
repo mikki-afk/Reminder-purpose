@@ -22,13 +22,10 @@
       overflow: hidden;
     }
 
-    /* English mode — warm amber/gold */
     body.english {
       background: linear-gradient(145deg, #1a1200 0%, #3d2b00 40%, #6b4800 100%);
       color: #ffe9a0;
     }
-
-    /* Chinese mode — deep indigo/rose */
     body.chinese {
       background: linear-gradient(145deg, #0d0018 0%, #2a0038 40%, #4a0060 100%);
       color: #f9c8f0;
@@ -36,7 +33,7 @@
 
     .card {
       text-align: center;
-      padding: 2.5rem 2rem;
+      padding: 2rem 2rem 1.5rem;
       max-width: 360px;
       width: 90%;
     }
@@ -49,10 +46,9 @@
       text-transform: uppercase;
       padding: 0.35rem 1rem;
       border-radius: 999px;
-      margin-bottom: 2rem;
+      margin-bottom: 1.8rem;
       opacity: 0.7;
     }
-
     body.english .mode-badge { background: rgba(255,220,100,0.15); color: #ffd966; }
     body.chinese .mode-badge { background: rgba(255,150,230,0.15); color: #ff9ee8; }
 
@@ -63,10 +59,9 @@
       filter: drop-shadow(0 0 24px currentColor);
       animation: pulse 3s ease-in-out infinite;
     }
-
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.06); }
+      50%       { transform: scale(1.06); }
     }
 
     .main-label {
@@ -76,21 +71,18 @@
       line-height: 1.15;
       margin-bottom: 0.5rem;
     }
-
     .sub-label {
       font-size: 0.95rem;
       opacity: 0.55;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
     }
 
     .divider {
-      width: 40px;
-      height: 2px;
+      width: 40px; height: 2px;
       border-radius: 2px;
-      margin: 0 auto 2.5rem;
+      margin: 0 auto 2rem;
       opacity: 0.3;
     }
-
     body.english .divider { background: #ffd966; }
     body.chinese .divider { background: #ff9ee8; }
 
@@ -102,7 +94,6 @@
       opacity: 0.45;
       margin-bottom: 0.6rem;
     }
-
     .countdown {
       font-size: 3rem;
       font-weight: 700;
@@ -111,30 +102,19 @@
       line-height: 1;
       margin-bottom: 0.4rem;
     }
-
     .switch-time {
       font-size: 0.82rem;
       opacity: 0.45;
     }
 
-    .clock {
-      margin-top: 2.8rem;
-      font-size: 0.78rem;
-      opacity: 0.35;
-      letter-spacing: 0.05em;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Progress bar */
     .progress-wrap {
       width: 100%;
       height: 3px;
       border-radius: 99px;
-      margin-top: 2.5rem;
+      margin-top: 2rem;
       overflow: hidden;
       opacity: 0.3;
     }
-
     body.english .progress-wrap { background: rgba(255,220,100,0.2); }
     body.chinese .progress-wrap { background: rgba(255,150,230,0.2); }
 
@@ -143,51 +123,340 @@
       border-radius: 99px;
       transition: width 1s linear;
     }
-
     body.english .progress-bar { background: #ffd966; }
     body.chinese .progress-bar { background: #ff9ee8; }
+
+    .clock {
+      margin-top: 1.5rem;
+      font-size: 0.78rem;
+      opacity: 0.35;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Notification button ── */
+    .notify-btn {
+      margin-top: 1.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 1.3rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      transition: opacity 0.2s, transform 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .notify-btn:active { transform: scale(0.95); }
+    body.english .notify-btn {
+      background: rgba(255,217,102,0.18);
+      color: #ffd966;
+      border: 1px solid rgba(255,217,102,0.25);
+    }
+    body.chinese .notify-btn {
+      background: rgba(255,158,232,0.18);
+      color: #ff9ee8;
+      border: 1px solid rgba(255,158,232,0.25);
+    }
+    .notify-btn.granted  { opacity: 0.5; cursor: default; }
+    .notify-btn.denied   { opacity: 0.4; cursor: default; }
+
+    /* ── Switch flash overlay ── */
+    .flash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      z-index: 100;
+    }
+    .flash.show { opacity: 1; pointer-events: auto; }
+    .flash.english-flash {
+      background: linear-gradient(145deg, #2a1e00cc, #6b4800cc);
+      backdrop-filter: blur(12px);
+    }
+    .flash.chinese-flash {
+      background: linear-gradient(145deg, #1a003acc, #4a0060cc);
+      backdrop-filter: blur(12px);
+    }
+    .flash-emoji { font-size: 6rem; animation: pop 0.5s cubic-bezier(.34,1.56,.64,1); }
+    .flash-text  {
+      font-size: 2rem; font-weight: 800;
+      animation: pop 0.5s cubic-bezier(.34,1.56,.64,1) 0.05s both;
+    }
+    .flash-sub   {
+      font-size: 0.95rem; opacity: 0.7;
+      animation: pop 0.5s cubic-bezier(.34,1.56,.64,1) 0.1s both;
+    }
+    .flash-dismiss {
+      margin-top: 1.5rem;
+      padding: 0.5rem 1.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+      color: inherit;
+      font-family: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+      animation: pop 0.5s cubic-bezier(.34,1.56,.64,1) 0.15s both;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @keyframes pop {
+      from { transform: scale(0.7); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    /* ── Shortcuts guide panel ── */
+    .guide-toggle {
+      margin-top: 1rem;
+      background: none;
+      border: none;
+      color: inherit;
+      font-family: inherit;
+      font-size: 0.75rem;
+      opacity: 0.35;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .guide-toggle:active { opacity: 0.6; }
+
+    .guide-panel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      overflow-y: auto;
+      padding: 2.5rem 1.5rem 3rem;
+    }
+    .guide-panel.open { display: block; }
+    body.english .guide-panel {
+      background: linear-gradient(145deg, #1a1200f5, #3d2b00f5);
+    }
+    body.chinese .guide-panel {
+      background: linear-gradient(145deg, #0d0018f5, #2a0038f5);
+    }
+
+    .guide-close {
+      float: right;
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: 1.4rem;
+      opacity: 0.5;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      line-height: 1;
+    }
+    .guide-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 0.3rem;
+      clear: both;
+    }
+    .guide-desc {
+      font-size: 0.82rem;
+      opacity: 0.5;
+      margin-bottom: 1.8rem;
+      line-height: 1.5;
+    }
+
+    .step {
+      display: flex;
+      gap: 0.9rem;
+      margin-bottom: 1.4rem;
+      align-items: flex-start;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 1.6rem;
+      height: 1.6rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-top: 0.1rem;
+    }
+    body.english .step-num { background: rgba(255,217,102,0.2); color: #ffd966; }
+    body.chinese .step-num { background: rgba(255,158,232,0.2); color: #ff9ee8; }
+
+    .step-text {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      opacity: 0.85;
+    }
+    .step-text strong { opacity: 1; font-weight: 700; }
+    .step-text code {
+      font-family: 'SF Mono', monospace;
+      font-size: 0.78rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+    }
+    body.english .step-text code { background: rgba(255,217,102,0.15); }
+    body.chinese .step-text code { background: rgba(255,158,232,0.15); }
+
+    .guide-section {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.4;
+      margin: 2rem 0 1rem;
+    }
+    .guide-note {
+      font-size: 0.78rem;
+      opacity: 0.4;
+      line-height: 1.6;
+      margin-top: 2rem;
+      padding-top: 1.2rem;
+    }
+    body.english .guide-note { border-top: 1px solid rgba(255,217,102,0.15); }
+    body.chinese .guide-note { border-top: 1px solid rgba(255,158,232,0.15); }
   </style>
 </head>
 <body>
+
+  <!-- Switch flash overlay -->
+  <div class="flash" id="flash">
+    <div class="flash-emoji" id="flash-emoji"></div>
+    <div class="flash-text"  id="flash-text"></div>
+    <div class="flash-sub"   id="flash-sub"></div>
+    <button class="flash-dismiss" onclick="dismissFlash()">OK</button>
+  </div>
+
+  <!-- Shortcuts guide panel -->
+  <div class="guide-panel" id="guide-panel">
+    <button class="guide-close" onclick="closeGuide()">✕</button>
+    <div class="guide-title">自动提醒设置</div>
+    <div class="guide-desc">
+      用 iOS 快捷指令自动化，即使网页没开着，<br>
+      每天早上 10 点 / 晚上 10 点也会自动通知你。
+    </div>
+
+    <div class="guide-section">第一个自动化 — 早上 10 点</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        打开 <strong>「快捷指令」</strong> App →
+        底部点 <strong>「自动化」</strong> → 右上角 <strong>「+」</strong>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        选 <strong>「一天中的某个时间」</strong>，
+        时间设为 <code>上午 10:00</code>，
+        重复选 <strong>「每天」</strong>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        点 <strong>「下一步」</strong> → <strong>「新建空白自动化」</strong><br>
+        搜索动作 <code>通知</code> → 选 <strong>「显示通知」</strong>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        标题填：<code>English time! 📝</code><br>
+        正文填：<code>10 AM–10 PM • Chat in English</code>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-text">
+        右上角点 <strong>「完成」</strong>，自动化会询问是否"立即运行" — 选 <strong>「不运行」</strong>
+      </div>
+    </div>
+
+    <div class="guide-section">第二个自动化 — 晚上 10 点</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        重复以上步骤，时间改为 <code>晚上 10:00</code>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        标题填：<code>中文时间! 💕</code><br>
+        正文填：<code>晚上 10 点 – 早上 10 点 • 用中文聊天</code>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        点 <strong>「完成」</strong> — 设置完成 🎉
+      </div>
+    </div>
+
+    <div class="guide-note">
+      提示：iOS 默认自动化需要手动确认才执行。
+      想全自动（锁屏也弹通知）可以在自动化设置里
+      关闭「运行前询问」开关。
+    </div>
+  </div>
+
+  <!-- Main card -->
   <div class="card">
     <div class="mode-badge" id="badge">—</div>
     <div class="emoji" id="emoji">⏳</div>
     <div class="main-label" id="main-label">Loading…</div>
-    <div class="sub-label" id="sub-label"></div>
+    <div class="sub-label"  id="sub-label"></div>
     <div class="divider"></div>
     <div class="countdown-label">Next switch in</div>
-    <div class="countdown" id="countdown">--:--:--</div>
+    <div class="countdown"  id="countdown">--:--:--</div>
     <div class="switch-time" id="switch-time"></div>
     <div class="progress-wrap">
       <div class="progress-bar" id="progress-bar" style="width:0%"></div>
     </div>
     <div class="clock" id="clock"></div>
+
+    <button class="notify-btn" id="notify-btn" onclick="handleNotifyClick()">
+      🔔 开启提醒
+    </button>
+    <div>
+      <button class="guide-toggle" onclick="openGuide()">
+        自动提醒怎么设置？
+      </button>
+    </div>
   </div>
 
   <script>
-    const ENGLISH_START = 10; // 10:00
-    const ENGLISH_END   = 22; // 22:00
+    const ENGLISH_START = 10;
+    const ENGLISH_END   = 22;
+
+    let prevIsEnglish = null;
+    let flashTimer    = null;
+
+    // ── Time helpers ──────────────────────────────────────────
 
     function isEnglishTime(h, m, s) {
-      const totalSec = h * 3600 + m * 60 + s;
-      const start    = ENGLISH_START * 3600;
-      const end      = ENGLISH_END   * 3600;
-      return totalSec >= start && totalSec < end;
+      const t = h * 3600 + m * 60 + s;
+      return t >= ENGLISH_START * 3600 && t < ENGLISH_END * 3600;
     }
 
     function secsUntilSwitch(h, m, s) {
-      const totalSec = h * 3600 + m * 60 + s;
-      const start    = ENGLISH_START * 3600;
-      const end      = ENGLISH_END   * 3600;
-      const dayEnd   = 24 * 3600;
-
-      if (isEnglishTime(h, m, s)) {
-        return end - totalSec;           // seconds until 22:00
-      } else if (totalSec < start) {
-        return start - totalSec;         // seconds until 10:00 (same day)
-      } else {
-        return dayEnd - totalSec + start; // seconds until 10:00 (next day)
-      }
+      const t     = h * 3600 + m * 60 + s;
+      const start = ENGLISH_START * 3600;
+      const end   = ENGLISH_END   * 3600;
+      if (isEnglishTime(h, m, s)) return end - t;
+      if (t < start)              return start - t;
+      return 24 * 3600 - t + start;
     }
 
     function fmt2(n) { return String(n).padStart(2, '0'); }
@@ -199,36 +468,87 @@
       return `${fmt2(h)}:${fmt2(m)}:${fmt2(s)}`;
     }
 
-    function fmtSwitchTime(english) {
-      if (english) return 'switches to 中文时间 at 10:00 PM';
-      const now = new Date();
-      const h   = now.getHours();
+    function fmtSwitchTime(eng) {
+      if (eng) return 'switches to 中文时间 at 10:00 PM';
+      const h   = new Date().getHours();
       const day = h < ENGLISH_START ? 'today' : 'tomorrow';
       return `switches to English time at 10:00 AM ${day}`;
     }
 
     function sessionProgress(h, m, s) {
-      const totalSec  = h * 3600 + m * 60 + s;
-      const start     = ENGLISH_START * 3600;
-      const end       = ENGLISH_END   * 3600;
-      const dayEnd    = 24 * 3600;
+      const t     = h * 3600 + m * 60 + s;
+      const start = ENGLISH_START * 3600;
+      const end   = ENGLISH_END   * 3600;
+      if (isEnglishTime(h, m, s)) return (t - start) / (end - start);
+      const duration = 12 * 3600;
+      const elapsed  = t >= end ? t - end : 24 * 3600 - end + t;
+      return elapsed / duration;
+    }
 
-      if (isEnglishTime(h, m, s)) {
-        const elapsed  = totalSec - start;
-        const duration = end - start;
-        return elapsed / duration;
+    // ── Flash overlay ─────────────────────────────────────────
+
+    function showFlash(eng) {
+      const flash = document.getElementById('flash');
+      flash.className = `flash ${eng ? 'english-flash' : 'chinese-flash'} show`;
+      document.getElementById('flash-emoji').textContent = eng ? '📝' : '💕';
+      document.getElementById('flash-text').textContent  = eng ? 'English time!' : '中文时间!';
+      document.getElementById('flash-sub').textContent   = eng
+        ? 'Time to chat in English'
+        : '切换到中文聊天';
+      if (flashTimer) clearTimeout(flashTimer);
+      flashTimer = setTimeout(dismissFlash, 6000);
+    }
+
+    function dismissFlash() {
+      document.getElementById('flash').classList.remove('show');
+    }
+
+    // ── Notifications ─────────────────────────────────────────
+
+    function notifSupported() { return 'Notification' in window; }
+
+    function updateNotifyBtn() {
+      const btn = document.getElementById('notify-btn');
+      if (!notifSupported()) {
+        btn.textContent = '🔕 不支持通知';
+        btn.classList.add('denied');
+        return;
+      }
+      const p = Notification.permission;
+      if (p === 'granted') {
+        btn.textContent = '✓ 提醒已开启';
+        btn.classList.add('granted');
+      } else if (p === 'denied') {
+        btn.textContent = '✗ 通知已拒绝（请在设置里开启）';
+        btn.classList.add('denied');
       } else {
-        // Chinese session: 22:00 → 10:00 (12 hours)
-        const duration = 12 * 3600;
-        let elapsed;
-        if (totalSec >= end) {
-          elapsed = totalSec - end;
-        } else {
-          elapsed = dayEnd - end + totalSec;
-        }
-        return elapsed / duration;
+        btn.textContent = '🔔 开启提醒';
+        btn.classList.remove('granted', 'denied');
       }
     }
+
+    async function handleNotifyClick() {
+      if (!notifSupported() || Notification.permission !== 'default') return;
+      await Notification.requestPermission();
+      updateNotifyBtn();
+    }
+
+    function fireNotification(eng) {
+      if (!notifSupported() || Notification.permission !== 'granted') return;
+      new Notification(eng ? 'English time! 📝' : '中文时间! 💕', {
+        body: eng
+          ? '10 AM–10 PM  •  Chat with Claude in English'
+          : '晚上10点–早上10点  •  用中文和 Claude 聊天',
+        silent: false,
+      });
+    }
+
+    // ── Guide panel ───────────────────────────────────────────
+
+    function openGuide()  { document.getElementById('guide-panel').classList.add('open'); }
+    function closeGuide() { document.getElementById('guide-panel').classList.remove('open'); }
+
+    // ── Main tick ─────────────────────────────────────────────
 
     function tick() {
       const now = new Date();
@@ -237,10 +557,8 @@
       const s   = now.getSeconds();
       const eng = isEnglishTime(h, m, s);
 
-      // Theme
       document.body.className = eng ? 'english' : 'chinese';
 
-      // Content
       document.getElementById('badge').textContent      = eng ? 'English Mode' : '中文模式';
       document.getElementById('emoji').textContent      = eng ? '📝' : '💕';
       document.getElementById('main-label').textContent = eng ? 'English time!' : '中文时间!';
@@ -248,20 +566,32 @@
         ? 'Chat with Claude in English'
         : '用中文和 Claude 聊天';
 
-      // Countdown
       const remaining = secsUntilSwitch(h, m, s);
       document.getElementById('countdown').textContent   = fmtCountdown(remaining);
       document.getElementById('switch-time').textContent = fmtSwitchTime(eng);
 
-      // Progress bar (how far through current session)
       const pct = sessionProgress(h, m, s) * 100;
       document.getElementById('progress-bar').style.width = pct.toFixed(2) + '%';
 
-      // Live clock
-      document.getElementById('clock').textContent =
-        `${fmt2(h)}:${fmt2(m)}:${fmt2(s)}`;
+      document.getElementById('clock').textContent = `${fmt2(h)}:${fmt2(m)}:${fmt2(s)}`;
+
+      // Detect switch
+      if (prevIsEnglish !== null && prevIsEnglish !== eng) {
+        showFlash(eng);
+        fireNotification(eng);
+      }
+      prevIsEnglish = eng;
     }
 
+    // ── Service worker (PWA) ──────────────────────────────────
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+
+    updateNotifyBtn();
     tick();
     setInterval(tick, 1000);
   </script>
