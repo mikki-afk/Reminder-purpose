@@ -2,9 +2,9 @@
 // POST /chat   body: { message: string, sessionId?: string }
 // returns:     { reply: string }
 //
-// Uses sessionId to scope per-user history in the SUBSCRIPTIONS KV.
-// Note: this endpoint is open. Add auth (CHAT_SHARED_SECRET header check
-// or wx.login + code2Session) before exposing publicly.
+// Auth: requires X-Auth header matching env.CHAT_PASSWORD (set via
+// `wrangler secret put CHAT_PASSWORD`). Without the secret, the endpoint
+// is open — set it before deploying publicly.
 
 const HISTORY_PREFIX = 'chat:history:';
 const HISTORY_TURNS = 10;
@@ -12,7 +12,14 @@ const SYSTEM_PROMPT =
   "You are Claude, chatting with the user. Match the user's language. Be concise unless asked for detail.";
 
 export async function handleChat(request, env) {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders() });
+  }
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
+
+  if (env.CHAT_PASSWORD && request.headers.get('X-Auth') !== env.CHAT_PASSWORD) {
+    return json({ error: 'unauthorized' }, 401);
+  }
 
   let body;
   try { body = await request.json(); }
@@ -34,13 +41,18 @@ export async function handleChat(request, env) {
   return json({ reply });
 }
 
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type,X-Auth',
+  };
+}
+
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
+    headers: { 'Content-Type': 'application/json', ...corsHeaders() },
   });
 }
 

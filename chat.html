@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Claude" />
+  <title>Claude</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+      background: #1a1612;
+      color: #f0e8d8;
+      overscroll-behavior: none;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    }
+
+    header {
+      padding: 14px 20px;
+      font-size: 17px;
+      font-weight: 600;
+      text-align: center;
+      border-bottom: 1px solid #2a241d;
+      background: #1a1612;
+      color: #d4a574;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .msg {
+      display: flex;
+      max-width: 85%;
+    }
+    .msg.user { align-self: flex-end; }
+    .msg.assistant { align-self: flex-start; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 16px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user .bubble {
+      background: #d4a574;
+      color: #1a1612;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.assistant .bubble {
+      background: #2a241d;
+      color: #f0e8d8;
+      border-bottom-left-radius: 4px;
+    }
+    .bubble.thinking {
+      opacity: 0.6;
+      font-style: italic;
+    }
+    .bubble.error {
+      background: #4a1f1f;
+      color: #ffb3b3;
+    }
+
+    .composer {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid #2a241d;
+      background: #1a1612;
+    }
+
+    #input {
+      flex: 1;
+      min-height: 38px;
+      max-height: 140px;
+      padding: 9px 14px;
+      font: inherit;
+      font-size: 16px;
+      color: #f0e8d8;
+      background: #2a241d;
+      border: 1px solid #3a3128;
+      border-radius: 18px;
+      resize: none;
+      outline: none;
+    }
+    #input:focus { border-color: #d4a574; }
+
+    #send {
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      font-size: 20px;
+      color: #1a1612;
+      background: #d4a574;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    #send:disabled {
+      background: #3a3128;
+      color: #6a5d4a;
+      cursor: not-allowed;
+    }
+
+    .empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6a5d4a;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>Claude</header>
+  <div id="messages">
+    <div class="empty" id="empty">和 Claude 说点什么</div>
+  </div>
+  <form class="composer" id="composer">
+    <textarea id="input" rows="1" placeholder="发消息…" autocomplete="off"></textarea>
+    <button id="send" type="submit" aria-label="send">→</button>
+  </form>
+
+  <script>
+    // ── CONFIG ────────────────────────────────────────────────
+    // After deploying the Cloudflare Worker, paste its URL here:
+    const WORKER_URL = '';
+    // e.g. 'https://language-reminder.YOUR_NAME.workers.dev'
+    // ─────────────────────────────────────────────────────────
+
+    const messagesEl = document.getElementById('messages');
+    const emptyEl = document.getElementById('empty');
+    const inputEl = document.getElementById('input');
+    const sendEl = document.getElementById('send');
+    const formEl = document.getElementById('composer');
+
+    // ── Session + auth ────────────────────────────────────────
+
+    let sessionId = localStorage.getItem('chat:sessionId');
+    if (!sessionId) {
+      sessionId = `s_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      localStorage.setItem('chat:sessionId', sessionId);
+    }
+
+    function getPassword() {
+      let pw = localStorage.getItem('chat:password');
+      if (!pw) {
+        pw = prompt('密码:') || '';
+        if (pw) localStorage.setItem('chat:password', pw);
+      }
+      return pw;
+    }
+
+    function clearPassword() {
+      localStorage.removeItem('chat:password');
+    }
+
+    // ── UI ────────────────────────────────────────────────────
+
+    function addMessage(role, content, opts = {}) {
+      if (emptyEl.parentNode) emptyEl.remove();
+      const msg = document.createElement('div');
+      msg.className = `msg ${role}`;
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble' + (opts.thinking ? ' thinking' : '') + (opts.error ? ' error' : '');
+      bubble.textContent = content;
+      msg.appendChild(bubble);
+      messagesEl.appendChild(msg);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return bubble;
+    }
+
+    function autosize() {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+    }
+
+    inputEl.addEventListener('input', autosize);
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        formEl.requestSubmit();
+      }
+    });
+
+    // ── Send ──────────────────────────────────────────────────
+
+    let sending = false;
+
+    formEl.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = inputEl.value.trim();
+      if (!text || sending) return;
+
+      if (!WORKER_URL) {
+        addMessage('assistant', 'WORKER_URL 未设置,请编辑 chat.html 顶部填入 Worker 域名。', { error: true });
+        return;
+      }
+
+      const pw = getPassword();
+      if (!pw) return;
+
+      sending = true;
+      sendEl.disabled = true;
+      addMessage('user', text);
+      inputEl.value = '';
+      autosize();
+      const placeholder = addMessage('assistant', '思考中…', { thinking: true });
+
+      try {
+        const res = await fetch(`${WORKER_URL}/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth': pw,
+          },
+          body: JSON.stringify({ message: text, sessionId }),
+        });
+
+        if (res.status === 401) {
+          clearPassword();
+          placeholder.textContent = '密码错误,刷新重输';
+          placeholder.classList.remove('thinking');
+          placeholder.classList.add('error');
+          return;
+        }
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+        placeholder.classList.remove('thinking');
+        placeholder.textContent = data.reply || '(空回复)';
+      } catch (err) {
+        placeholder.classList.remove('thinking');
+        placeholder.classList.add('error');
+        placeholder.textContent = `❌ ${err.message}`;
+      } finally {
+        sending = false;
+        sendEl.disabled = false;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        inputEl.focus();
+      }
+    });
+  </script>
+</body>
+</html>
