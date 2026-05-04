@@ -1,0 +1,23 @@
+<view class="chat">
+  <scroll-view class="messages" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation>
+    <view wx:for="{{messages}}" wx:key="id" class="msg msg-{{item.role}}" id="m{{item.id}}">
+      <view class="bubble">{{item.content}}</view>
+    </view>
+    <view wx:if="{{loading}}" class="msg msg-assistant" id="loadingDot">
+      <view class="bubble">…</view>
+    </view>
+  </scroll-view>
+
+  <view class="input-bar">
+    <input
+      class="input"
+      value="{{input}}"
+      bindinput="onInput"
+      placeholder="跟 Claude 说点什么"
+      confirm-type="send"
+      bindconfirm="onSend"
+      adjust-position
+    />
+    <button class="send" bindtap="onSend" disabled="{{loading || !input}}" size="mini">发送</button>
+  </view>
+</view>

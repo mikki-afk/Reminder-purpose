@@ -1,0 +1,14 @@
+{
+  "miniprogramRoot": "./",
+  "projectname": "claude-chat",
+  "appid": "REPLACE_WITH_YOUR_APPID",
+  "compileType": "miniprogram",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "minified": true,
+    "newFeature": true
+  },
+  "libVersion": "latest",
+  "description": "Chat with Claude in WeChat Mini Program."
+}

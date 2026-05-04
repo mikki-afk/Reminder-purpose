@@ -5,10 +5,12 @@
 //   SUBSCRIPTIONS   – KV namespace
 //   VAPID_PUBLIC_KEY  – base64url string (from vapid-keygen step)
 //   VAPID_PRIVATE_KEY – base64url string (from vapid-keygen step)
-//   WECHAT_TOKEN / WECHAT_APP_ID / WECHAT_APP_SECRET – WeChat Official Account
-//   ANTHROPIC_API_KEY – for /wechat Claude bridge
+//   WECOM_TOKEN / WECOM_AES_KEY / WECOM_CORP_ID / WECOM_SECRET / WECOM_AGENT_ID
+//     – WeCom (企业微信) self-built app callback
+//   ANTHROPIC_API_KEY – for /wecom and /chat Claude bridges
 
-import { handleWechat } from './wechat.js';
+import { handleWecom } from './wecom.js';
+import { handleChat } from './chat.js';
 
 const ENGLISH_CRON = '0 2 * * *';  // 10:00 AM UTC+8
 const CHINESE_CRON = '0 14 * * *'; // 10:00 PM UTC+8
@@ -26,9 +28,14 @@ export default {
       return new Response(null, { status: 204, headers: cors });
     }
 
-    // /wechat  →  WeChat Official Account callback (GET verify, POST message)
-    if (url.pathname === '/wechat') {
-      return handleWechat(request, env, ctx);
+    // /wecom  →  WeCom self-built app callback (GET verify, POST message)
+    if (url.pathname === '/wecom') {
+      return handleWecom(request, env, ctx);
+    }
+
+    // /chat  →  JSON chat endpoint (Mini Program / web frontends)
+    if (url.pathname === '/chat') {
+      return handleChat(request, env);
     }
 
     // GET /vapid-public-key  →  return public key for browser subscription
