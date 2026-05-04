@@ -5,12 +5,16 @@
 //   SUBSCRIPTIONS   – KV namespace
 //   VAPID_PUBLIC_KEY  – base64url string (from vapid-keygen step)
 //   VAPID_PRIVATE_KEY – base64url string (from vapid-keygen step)
+//   WECHAT_TOKEN / WECHAT_APP_ID / WECHAT_APP_SECRET – WeChat Official Account
+//   ANTHROPIC_API_KEY – for /wechat Claude bridge
+
+import { handleWechat } from './wechat.js';
 
 const ENGLISH_CRON = '0 2 * * *';  // 10:00 AM UTC+8
 const CHINESE_CRON = '0 14 * * *'; // 10:00 PM UTC+8
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url  = new URL(request.url);
     const cors = {
       'Access-Control-Allow-Origin':  '*',
@@ -20,6 +24,11 @@ export default {
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: cors });
+    }
+
+    // /wechat  →  WeChat Official Account callback (GET verify, POST message)
+    if (url.pathname === '/wechat') {
+      return handleWechat(request, env, ctx);
     }
 
     // GET /vapid-public-key  →  return public key for browser subscription
